@@ -24,7 +24,9 @@ __author__ = 'ZQ'
 
 class BuyerTrade_Info(object):
     def __init__(self, url):
-        self.browser = webdriver.Chrome()
+        option = webdriver.ChromeOptions()
+        option.add_argument('--headless')
+        self.browser = webdriver.Chrome(chrome_options=option)
         # self.browser.maximize_window()
         self.wait = WebDriverWait(self.browser, 2)
         self.db = MysqldbHelper()
