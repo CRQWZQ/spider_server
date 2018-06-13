@@ -9,7 +9,7 @@ __author__ = 'ZQ'
 class SelectExecutor(object):
     def __init__(self):
         self.db = MysqldbHelper()
-        sql = 'select login_url from qr_code_login where status=1'
+        sql = 'SELECT login_url FROM `lg_token_task` where `status`="success"'
         self.urls = self.db.update(sql)
 
     def selectExecutor(self):
