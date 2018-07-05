@@ -18,6 +18,8 @@ from selenium import webdriver
 from multiprocessing.pool import Pool
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.wait import WebDriverWait
+from sqlalchemy.testing.plugin.plugin_base import logging
+
 from mysqldbHelper import MysqldbHelper
 
 __author__ = 'ZQ'
@@ -26,9 +28,10 @@ class BuyerTrade_Info(object):
     def __init__(self, url):
         option = webdriver.ChromeOptions()
         option.add_argument('--headless')
-        self.browser = webdriver.Chrome(chrome_options=option)
+        #chrome_options = option
+        self.browser = webdriver.Chrome()
         # self.browser.maximize_window()
-        self.wait = WebDriverWait(self.browser, 2)
+        self.wait = WebDriverWait(self.browser, 3)
         self.db = MysqldbHelper()
         self.url = url
 
@@ -37,103 +40,26 @@ class BuyerTrade_Info(object):
         try:
 
             # 获取授权登录的链接进行页面数据获取
-            self.browser.get(self.url)
+            self.browser.get(self.url['login_url'])
             time.sleep(2)
-            # # 切换电脑账号登录
-            # wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#J_Quick2Static'))).click()
-            # time.sleep(2)
-            # action = ActionChains(browser)
-            # time.sleep(2)
-            # # 滑动鼠标尽可能让模拟人运行鼠标的行为
-            # action.move_by_offset(random.randint(10, 60), random.randint(10, 60)).perform()
-            # # 先使用自己账号进行登录测试
-            # browser.find_element_by_id('TPL_username_1').clear()
-            # username = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#TPL_username_1')))
-            # action.move_by_offset(random.randint(10, 60), random.randint(10, 60)).perform()
-            # username.send_keys(u'tb_*******')
-            # username.send_keys(Keys.TAB)
-            # time.sleep(2)
-            # password = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, '#TPL_password_1')))
-            # browser.find_element_by_id('TPL_password_1').clear()
-            # password.click()
-            # browser.find_element_by_id('TPL_password_1').send_keys('********')
-            # time.sleep(1)
-            # # 滑块验证
-            # while True:
-            #     try:
-            #         # 定位滑块元素,如果不存在，则跳出循环
-            #         show = browser.find_element_by_xpath("//*[@id='nocaptcha']")
-            #         showval = show.value_of_css_property("display")
-            #         if not show.is_displayed():
-            #             break
-            #         # 定位滑块元素
-            #         source = browser.find_element_by_xpath('//*[@id="nc_1_n1z"]')
-            #         time.sleep(1)
-            #         action.click_and_hold(source).perform()
-            #         for index in range(20):
-            #             try:
-            #                 action.move_by_offset(15, 0).perform() # 平行移动鼠标
-            #                 # browser.save_screenshot('login-screeshot-i-' + str(index) + '.png')
-            #             except Exception as e:
-            #                 print(e)
-            #                 break
-            #
-            #             if (index==19):
-            #                 action.release()
-            #                 time.sleep(1)
-            #                 # browser.save_screenshot('login-screeshot-i-' + str(index) + '.png')
-            #             else:
-            #                 time.sleep(0.2)
-            #                 time.sleep(0.2)
-            #
-            #         print(show.get_attribute("outerHTML"))
-            #         time.sleep(2)
-            #         # browser.save_screenshot('login-screeshot-0.png')
-            #
-            #         # # 定义鼠标拖放动作
-            #         # ActionChains(browser).drag_and_drop_by_offset(source, 600, 0).perform()
-            #         # # 等待JS认证运行，如果不等待容易报错
-            #         time.sleep(2)
-            #         # 查看是否认证成功，获取text值
-            #         text = browser.find_element_by_xpath('//*[@id="nc_1__scale_text"]/span')
-            #         # 判断验证响应效果
-            #         if text.text.startswith(u'验证通过'):
-            #             print('成功滑动')
-            #             break
-            #         if text.text.startswith(u'请点击'):
-            #             print('成功滑动')
-            #             break
-            #         if text.text.startswith(u'请按住'):
-            #             continue
-            #     except Exception as e:
-            #         # 失败后重新刷新加载滑块模块
-            #         action.move_by_offset(random.randint(100, 600), random.randint(100, 600)).perform()  # 平行移动鼠标
-            #         browser.find_element_by_xpath("//*[@id='nocaptcha']/div/span/a").click()
-            #         print(e)
+            if not self.is_login_sucess():
+                print("lg_token  is invalid! | lg_token is: %s" % self.url['lg_token'])
+                sql = "update lg_token_task set `status`='succ_fail' where `lg_token`='" + self.url['lg_token'] + "'"
+                self.db.update(sql)
 
-            # 点击登录
-            # wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#J_SubmitStatic'))).click()
+            else:
+                self.browser.find_element_by_xpath('//*[@id="J_SiteNavMytaobao"]/div[1]/a/span').click()
+                time.sleep(1)
+                # 获取用户信誉 重复用户不会多次获取（后续优化用户是否存在数据库中，存在则只更新数据）
+                self.get_contentInfo()
 
-            # 扫码等待
-            while True:
-                time.sleep(2)
-                if self.is_login_sucess():
-                    break
-                elif self.is_QRCodeLogin_sucess():
-                    continue
-                else:
-                    time.sleep(1)
-                    continue
-
-            self.browser.find_element_by_xpath('//*[@id="J_SiteNavMytaobao"]/div[1]/a/span').click()
-            time.sleep(1)
-            # 获取用户信誉 重复用户不会多次获取（后续优化用户是否存在数据库中，存在则只更新数据）
-            self.get_contentInfo()
-
-            # 获取所有订单信息 （页面还为全部解析完成）
-            self.browser.find_element_by_xpath('//*[@id="bought"]').click()
-            time.sleep(1)
-            self.get_tradeInfo()
+                # 获取所有订单信息 （页面还为全部解析完成）
+                self.browser.find_element_by_xpath('//*[@id="bought"]').click()
+                time.sleep(1)
+                self.get_tradeInfo()
+                sql ="update lg_token_task set `status`='succ_end' where `lg_token`='" + self.url['lg_token'] + "'"
+                self.db.update(sql)
+            return print("Crawler execution complete ! lg_token is:%s" % self.url['lg_token'])
         except TimeoutException as e:
             print('超时异常', e)
 
@@ -377,22 +303,22 @@ class BuyerTrade_Info(object):
         except:
             return False
 
-    # 判断是否登录账号：（后续有链接也要弃用）
+    # 判断是否登录账号:
     def is_login_sucess(self):
-        try:
-            self.browser.find_element_by_xpath('//*[@id="J_SiteNavLogin"]/div[1]/div[2]/a[1]').text != ''
+        if self.browser.find_element_by_xpath('//*[@id="J_SiteNavLogin"]/div[1]/div[2]/a[1]').text == self.url['user_name']:
             return True
-        except:
+        else:
             return False
 
     def call_close(self):
-        self.browser.close()
+        self.browser.quit()
 
 def trade_spider_run(url):
     wn = BuyerTrade_Info(url)
     try:
         wn.search_trade()
     except Exception as e:
+
         print('请求出现错误，导致任务失败！', e)
 
     finally:
@@ -410,7 +336,8 @@ def main(urls):
 
 if __name__ == '__main__':
 
-    urls = ["https://login.taobao.com"] * 3
+    urls = [{'login_url': 'https://www.taobao.com', 'lg_token': '9dab80185dc1baee9999feaaa7750f7c'}]
     main(urls)
 
-
+#   ps -efww|grep LOCAL=chromedriver|grep -v grep|cut -c 9-15|xargs kill -9
+# 批量杀死进程名为chromedriver的

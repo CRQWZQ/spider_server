@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(filename)s[line:%(
 
 executors = {
     'default': ThreadPoolExecutor(5),
-    'processpool': ProcessPoolExecutor(3)
+    'processpool': ProcessPoolExecutor(5)
 }
 
 if __name__ == '__main__':
