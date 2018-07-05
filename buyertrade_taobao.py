@@ -18,7 +18,6 @@ from selenium import webdriver
 from multiprocessing.pool import Pool
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.wait import WebDriverWait
-from sqlalchemy.testing.plugin.plugin_base import logging
 
 from mysqldbHelper import MysqldbHelper
 
