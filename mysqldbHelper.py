@@ -6,7 +6,7 @@ __author__ = 'ZQ'
 class MysqldbHelper:
     def getCon(self):
         try:
-            conn = pymysql.connect(host='47.96.109.113', user='dustpan', password='dustpan@1234', db='tb', port=3306, charset='utf8', cursorclass=pymysql.cursors.DictCursor)
+            conn = pymysql.connect(host='localhost', user='root', password='root', db='tb', port=3306, charset='utf8', cursorclass=pymysql.cursors.DictCursor)
             return conn
         except pymysql.Error as e:
             print('pymysql Error:%s' % e)
