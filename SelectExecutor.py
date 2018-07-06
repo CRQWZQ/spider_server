@@ -16,7 +16,9 @@ class SelectExecutor(object):
 
         if self.urls:
             print("startTime:" + time.strftime("%Y-%m-%d %H:%M:%S"))
-            buyertrade_taobao.main(self.urls)
+            # buyertrade_taobao.pool_main(self.urls)
+            for url in self.urls:
+                buyertrade_taobao.trade_spider_run(url)
             print("endTime:" + time.strftime("%Y-%m-%d %H:%M:%S"))
         else:
             print("No job is waiting !")
