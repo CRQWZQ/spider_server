@@ -18,49 +18,53 @@ from selenium import webdriver
 from multiprocessing.pool import Pool
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support.wait import WebDriverWait
-
 from mysqldbHelper import MysqldbHelper
 
 __author__ = 'ZQ'
 
 class BuyerTrade_Info(object):
     def __init__(self, url):
-        option = webdriver.ChromeOptions()
-        option.add_argument('--headless')
-        #chrome_options = option
-        self.browser = webdriver.Chrome()
-        # self.browser.maximize_window()
-        self.wait = WebDriverWait(self.browser, 3)
+        # option = webdriver.ChromeOptions()
+        # option.add_argument('--headless')
+        # self.browser = webdriver.Chrome(chrome_options=option)
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--no-sandbox')
+        prefs = {"profile.managed_default_content_settings.images": 2}
+        chrome_options.add_experimental_option("prefs", prefs)
+        self.browser = webdriver.Chrome(chrome_options=chrome_options)
+
+        print("-----------chromeDriver is starting!------------")
+        self.wait = WebDriverWait(self.browser, 2)
         self.db = MysqldbHelper()
         self.url = url
 
     # 获取淘宝订单页面
     def search_trade(self):
-        try:
 
-            # 获取授权登录的链接进行页面数据获取
-            self.browser.get(self.url['login_url'])
-            time.sleep(2)
-            if not self.is_login_sucess():
-                print("lg_token  is invalid! | lg_token is: %s" % self.url['lg_token'])
-                sql = "update lg_token_task set `status`='succ_fail' where `lg_token`='" + self.url['lg_token'] + "'"
-                self.db.update(sql)
+        # 获取授权登录的链接进行页面数据获取
+        self.browser.get(self.url['login_url'])
+        time.sleep(2)
+        if not self.is_login_sucess():
+            sql = "update lg_token_task set `status`='succ_fail' where `lg_token`='" + self.url['lg_token'] + "'"
+            self.db.update(sql)
+            return print("lg_token  is invalid! | lg_token is: %s" % self.url['lg_token'])
 
-            else:
-                self.browser.find_element_by_xpath('//*[@id="J_SiteNavMytaobao"]/div[1]/a/span').click()
-                time.sleep(1)
-                # 获取用户信誉 重复用户不会多次获取（后续优化用户是否存在数据库中，存在则只更新数据）
-                self.get_contentInfo()
+        else:
+            self.browser.find_element_by_xpath('//*[@id="J_SiteNavMytaobao"]/div[1]/a/span').click()
+            time.sleep(1)
+            # 获取用户信誉 重复用户不会多次获取（后续优化用户是否存在数据库中，存在则只更新数据）
+            self.get_contentInfo()
 
-                # 获取所有订单信息 （页面还为全部解析完成）
-                self.browser.find_element_by_xpath('//*[@id="bought"]').click()
-                time.sleep(1)
-                self.get_tradeInfo()
-                sql ="update lg_token_task set `status`='succ_end' where `lg_token`='" + self.url['lg_token'] + "'"
-                self.db.update(sql)
+            # 获取所有订单信息 （页面还为全部解析完成）
+            self.browser.find_element_by_xpath('//*[@id="bought"]').click()
+            time.sleep(1)
+            self.get_tradeInfo()
+            sql ="update lg_token_task set `status`='succ_end' where `lg_token`='" + self.url['lg_token'] + "'"
+            self.db.update(sql)
             return print("Crawler execution complete ! lg_token is:%s" % self.url['lg_token'])
-        except TimeoutException as e:
-            print('超时异常', e)
+
 
     # 评价管理中获取用户誉
     def get_contentInfo(self):
@@ -323,8 +327,8 @@ def trade_spider_run(url):
     finally:
         wn.call_close()
 
-def main(urls):
-    pool = Pool(processes=5)
+def pool_main(urls):
+    pool = Pool(processes=1)
     for url in urls:
         result = pool.apply_async(trade_spider_run, (url, ))
 
@@ -336,7 +340,7 @@ def main(urls):
 if __name__ == '__main__':
 
     urls = [{'login_url': 'https://www.taobao.com', 'lg_token': '9dab80185dc1baee9999feaaa7750f7c'}]
-    main(urls)
+    pool_main(urls)
 
 #   ps -efww|grep LOCAL=chromedriver|grep -v grep|cut -c 9-15|xargs kill -9
 # 批量杀死进程名为chromedriver的
