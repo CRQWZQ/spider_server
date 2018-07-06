@@ -23,6 +23,6 @@ executors = {
 
 if __name__ == '__main__':
     scheduler = BlockingScheduler(executors=executors)
-    scheduler.add_job(job, 'interval', minutes=1)
+    scheduler.add_job(job, 'interval', seconds=30)
     scheduler._logger = logging
     scheduler.start()
